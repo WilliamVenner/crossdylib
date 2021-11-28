@@ -106,21 +106,15 @@ impl<T> CrossDylib<T> {
 	#[doc(hidden)]
 	#[inline]
 	#[cfg(not(debug_assertions))]
-	pub fn new_ref(&self) -> Arc<T> {
-		match unsafe { &*self.inner.get() } {
-			Some(ref inner) => inner.clone(),
-			None => unreachable!()
-		}
+	pub fn new_ref(&self) -> Option<Arc<T>> {
+		unsafe { &*self.inner.get() }.as_ref().map(|arc| arc.clone())
 	}
 
 	#[doc(hidden)]
 	#[inline]
 	#[cfg(debug_assertions)]
-	pub fn new_ref(&self) -> Arc<T> {
-		match &*self.inner.borrow() {
-			Some(inner) => inner.clone(),
-			None => unreachable!()
-		}
+	pub fn new_ref(&self) -> Option<Arc<T>> {
+		self.inner.borrow().as_ref().map(|arc| arc.clone())
 	}
 
 	/// Synchronizes the value across all loaded shared libraries. You must call this function before using a CrossDylib.
@@ -166,7 +160,7 @@ impl<T> CrossDylib<T> {
 						*inner = Some(init);
 						IterationControl::Break
 					} else {
-						// We just iterated over ourself
+						// We just iterated over ourself, or this module isn't ready yet
 						IterationControl::Continue
 					}
 				}
@@ -293,7 +287,7 @@ macro_rules! crossdylib {
 					if $ident.syncing.load(std::sync::atomic::Ordering::Acquire) {
 						None
 					} else {
-						Some($ident.new_ref())
+						$ident.new_ref()
 					}
 				}
 			});
