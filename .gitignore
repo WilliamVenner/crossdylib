@@ -1,5 +1,5 @@
 target/
 tests/a1/Cargo.lock
 tests/b2/Cargo.lock
-tests/b3/Cargo.lock
+tests/c3/Cargo.lock
 tests/main/Cargo.lock
