@@ -113,10 +113,10 @@ impl<T> CrossDylib<T> {
 }
 
 impl<T> std::ops::Deref for CrossDylib<T> {
-    type Target = T;
+	type Target = T;
 
 	#[inline]
-    fn deref(&self) -> &Self::Target {
+	fn deref(&self) -> &Self::Target {
 		unsafe {
 			let inner = {
 				#[cfg(not(debug_assertions))] {
@@ -135,7 +135,7 @@ impl<T> std::ops::Deref for CrossDylib<T> {
 				None => std::hint::unreachable_unchecked()
 			}
 		}
-    }
+	}
 }
 
 #[macro_export]
