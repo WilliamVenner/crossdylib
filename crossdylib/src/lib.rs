@@ -64,6 +64,7 @@
 //! ```
 
 use std::sync::{Arc, atomic::AtomicBool};
+use findshlibs::{IterationControl, SharedLibrary};
 
 #[doc(hidden)]
 pub use concat_idents::concat_idents as __concat_idents;
@@ -125,8 +126,6 @@ impl<T> CrossDylib<T> {
 	///
 	/// This function will panic in debug mode if a race condition occurs.
 	pub unsafe fn sync(&self) -> Result<(), libloading::Error> {
-		use findshlibs::{IterationControl, SharedLibrary};
-
 		assert!(self.symbol.len() > 0 && self.symbol.ends_with(&[0u8]));
 
 		let mut result = Ok(());
@@ -293,4 +292,31 @@ macro_rules! crossdylib {
 			});
 		)+
 	};
+}
+
+/// Scans all loaded shared libraries for the specified procedure.
+pub unsafe fn scan_fn<T: Copy>(symbol: &[u8]) -> Result<Option<T>, libloading::Error> {
+	let mut result = Ok(None);
+	findshlibs::TargetSharedLibrary::each(|shlib| {
+		let lib = match libloading::Library::new(shlib.name()) {
+			Ok(lib) => lib,
+			Err(err) => {
+				result = Err(err);
+				return IterationControl::Break;
+			},
+		};
+
+		match lib.get::<T>(symbol) {
+			Err(libloading::Error::DlSym { .. }) | Err(libloading::Error::DlSymUnknown) | Err(libloading::Error::GetProcAddress { .. }) | Err(libloading::Error::GetProcAddressUnknown) => IterationControl::Continue,
+			Err(err) => {
+				result = Err(err);
+				IterationControl::Break
+			},
+			Ok(sym) => {
+				result = Ok(Some(*sym));
+				IterationControl::Break
+			}
+		}
+	});
+	result
 }
