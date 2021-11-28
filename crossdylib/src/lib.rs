@@ -1,3 +1,68 @@
+//! # crossdylib
+//!
+//! This library can be used to achieve shared state across shared libraries/modules.
+//!
+//! ## Support
+//!
+//! Supported platforms
+//!
+//! * Windows
+//! * Linux
+//!
+//! # Example
+//!
+//! ### `a.dll`
+//!
+//! ```ignore
+//! #[macro_use] extern crate crossdylib;
+//!
+//! crossdylib! {
+//! 	static THE_ANSWER: std::sync::Mutex<u32> = std::sync::Mutex::new(39);
+//! }
+//!
+//! #[no_mangle]
+//! pub unsafe extern "C" fn increment() {
+//! 	THE_ANSWER.sync().unwrap();
+//!
+//! 	let mut lock = THE_ANSWER.lock().unwrap();
+//! 	*lock += 1;
+//! 	assert_eq!(*lock, 40);
+//! }
+//! ```
+//!
+//! ### `b.dll`
+//!
+//! ```ignore
+//! #[macro_use] extern crate crossdylib;
+//!
+//! crossdylib! {
+//! 	static THE_ANSWER: std::sync::Mutex<u32> = std::sync::Mutex::new(39);
+//! }
+//!
+//! #[no_mangle]
+//! pub unsafe extern "C" fn increment() {
+//! 	THE_ANSWER.sync().unwrap();
+//!
+//! 	let mut lock = THE_ANSWER.lock().unwrap();
+//! 	*lock += 1;
+//! 	assert_eq!(*lock, 41);
+//! }
+//! ```
+//!
+//! ### `main.exe`
+//!
+//! ```ignore
+//! fn main() {
+//! 	let a = Library::new("a.dll").unwrap();
+//! 	a.get::<extern "C" fn()>("increment").unwrap()();
+//!
+//! 	let b = Library::new("b.dll").unwrap();
+//! 	b.get::<extern "C" fn()>("increment").unwrap()();
+//!
+//! 	println!("Success");
+//! }
+//! ```
+
 use std::sync::{Arc, atomic::AtomicBool};
 
 #[doc(hidden)]
@@ -58,6 +123,13 @@ impl<T> CrossDylib<T> {
 		}
 	}
 
+	/// Synchronizes the value across all loaded shared libraries. You must call this function before using a CrossDylib.
+	///
+	/// **This function is NOT thread safe.** Do not call this function from more than one thread. Always wait for this function to complete before spawning threads that use the CrossDylib.
+	///
+	/// # Panics
+	///
+	/// This function will panic in debug mode if a race condition occurs.
 	pub unsafe fn sync(&self) -> Result<(), libloading::Error> {
 		use findshlibs::{IterationControl, SharedLibrary};
 
@@ -139,6 +211,69 @@ impl<T> std::ops::Deref for CrossDylib<T> {
 }
 
 #[macro_export]
+/// Creates CrossDylibs.
+///
+/// CrossDylibs must be synchronized using the `CrossDylib::sync` function before use.
+///
+/// # Panics
+///
+/// CrossDylibs will panic if accessed before `CrossDylib::sync` is called in debug mode.
+///
+/// In release mode this will lead to undefined behaviour.
+///
+/// # Example
+///
+/// ### `a.dll`
+///
+/// ```ignore
+/// #[macro_use] extern crate crossdylib;
+///
+/// crossdylib! {
+/// 	static THE_ANSWER: std::sync::Mutex<u32> = std::sync::Mutex::new(39);
+/// }
+///
+/// #[no_mangle]
+/// pub unsafe extern "C" fn increment() {
+/// 	THE_ANSWER.sync().unwrap();
+///
+/// 	let mut lock = THE_ANSWER.lock().unwrap();
+/// 	*lock += 1;
+/// 	assert_eq!(*lock, 40);
+/// }
+/// ```
+///
+/// ### `b.dll`
+///
+/// ```ignore
+/// #[macro_use] extern crate crossdylib;
+///
+/// crossdylib! {
+/// 	static THE_ANSWER: std::sync::Mutex<u32> = std::sync::Mutex::new(39);
+/// }
+///
+/// #[no_mangle]
+/// pub unsafe extern "C" fn increment() {
+/// 	THE_ANSWER.sync().unwrap();
+///
+/// 	let mut lock = THE_ANSWER.lock().unwrap();
+/// 	*lock += 1;
+/// 	assert_eq!(*lock, 41);
+/// }
+/// ```
+///
+/// ### `main.exe`
+///
+/// ```ignore
+/// fn main() {
+/// 	let a = Library::new("a.dll").unwrap();
+/// 	a.get::<extern "C" fn()>("increment").unwrap()();
+///
+/// 	let b = Library::new("b.dll").unwrap();
+/// 	b.get::<extern "C" fn()>("increment").unwrap()();
+///
+/// 	println!("Success");
+/// }
+/// ```
 macro_rules! crossdylib {
 	{ $(static $ident:ident: $ty:ty = $expr:expr;)+ } => {
 		$(
