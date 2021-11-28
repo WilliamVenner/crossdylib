@@ -1,7 +1,13 @@
 [package]
 name = "crossdylib"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
+authors = ["William Venner <william@venner.io>"]
+license = "MIT"
+description = "Cross-platform shared state across shared libraries/modules"
+keywords = ["dylib", "cdylib", "shared", "state", "modules"]
+categories = ["development-tools::ffi", "rust-patterns"]
+repository = "https://github.com/WilliamVenner/crossdylib"
 
 [dependencies]
 findshlibs = "0"
