@@ -1,0 +1,17 @@
+[package]
+name = "a1"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+crossdylib = { path = "../../crossdylib" }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

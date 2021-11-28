@@ -1,0 +1,10 @@
+[package]
+name = "crossdylib"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+findshlibs = "0"
+libloading = "0"
+concat-idents = "1"
+atomic_refcell = "0"

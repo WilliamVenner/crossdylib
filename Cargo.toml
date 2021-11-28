@@ -1,0 +1,8 @@
+[workspace]
+members = ["crossdylib"]
+exclude = [
+	"tests/a1",
+	"tests/b2",
+	"tests/c3",
+	"tests/main",
+]
