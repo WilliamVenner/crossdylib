@@ -1,6 +1,15 @@
 use libloading::Library;
 
 #[cfg(debug_assertions)]
+#[cfg(target_os = "windows")]
+macro_rules! lib_path {
+	($lib:literal) => {
+		concat!($lib, "/target/debug/", $lib, ".dll")
+	};
+}
+
+#[cfg(debug_assertions)]
+#[cfg(target_os = "linux")]
 macro_rules! lib_path {
 	($lib:literal) => {
 		concat!($lib, "/target/debug/lib", $lib, ".so")
@@ -8,6 +17,15 @@ macro_rules! lib_path {
 }
 
 #[cfg(not(debug_assertions))]
+#[cfg(target_os = "windows")]
+macro_rules! lib_path {
+	($lib:literal) => {
+		concat!($lib, "/target/release/", $lib, ".dll")
+	};
+}
+
+#[cfg(not(debug_assertions))]
+#[cfg(target_os = "linux")]
 macro_rules! lib_path {
 	($lib:literal) => {
 		concat!($lib, "/target/release/lib", $lib, ".so")

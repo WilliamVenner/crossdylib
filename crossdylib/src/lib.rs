@@ -84,7 +84,7 @@ impl<T> CrossDylib<T> {
 			};
 
 			match lib.get::<extern "Rust" fn() -> Option<Arc<T>>>(self.symbol) {
-				Err(libloading::Error::DlSym { .. }) | Err(libloading::Error::DlSymUnknown) => IterationControl::Continue,
+				Err(libloading::Error::DlSym { .. }) | Err(libloading::Error::DlSymUnknown) | Err(libloading::Error::GetProcAddress { .. }) | Err(libloading::Error::GetProcAddressUnknown) => IterationControl::Continue,
 				Err(err) => {
 					result = Err(err);
 					IterationControl::Break
