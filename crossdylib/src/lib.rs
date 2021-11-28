@@ -275,9 +275,9 @@ impl<T> std::ops::Deref for CrossDylib<T> {
 /// }
 /// ```
 macro_rules! crossdylib {
-	{ $(static $ident:ident: $ty:ty = $expr:expr;)+ } => {
+	{ $($vis:vis static $ident:ident: $ty:ty = $expr:expr;)+ } => {
 		$(
-			static $ident: $crate::CrossDylib<$ty> = $crate::CrossDylib {
+			$vis static $ident: $crate::CrossDylib<$ty> = $crate::CrossDylib {
 				inner: $crate::__new_container::<$ty>(),
 				symbol: concat!("__crossdylib_", stringify!($ident), "\0").as_bytes(),
 				syncing: ::std::sync::atomic::AtomicBool::new(false),

@@ -32,7 +32,7 @@ dependencies = [
 
 [[package]]
 name = "crossdylib"
-version = "1.0.1"
+version = "1.0.2"
 dependencies = [
  "atomic_refcell",
  "concat-idents",
