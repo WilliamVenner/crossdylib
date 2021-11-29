@@ -138,8 +138,17 @@ impl<T> CrossDylib<T> {
 
 		self.syncing.store(true, std::sync::atomic::Ordering::Release);
 
+		let process = std::env::current_exe().ok();
+
 		// Try and find a module that has already created this
 		findshlibs::TargetSharedLibrary::each(|shlib| {
+			if let Some(ref process) = process {
+				if shlib.name() == process {
+					// Skip the current process
+					return IterationControl::Continue;
+				}
+			}
+
 			let lib = match libloading::Library::new(shlib.name()) {
 				Ok(lib) => lib,
 				Err(err) => {
@@ -297,7 +306,17 @@ macro_rules! crossdylib {
 /// Scans all loaded shared libraries for the specified procedure.
 pub unsafe fn scan_fn<T: Copy>(symbol: &[u8]) -> Result<Option<T>, libloading::Error> {
 	let mut result = Ok(None);
+
+	let process = std::env::current_exe().ok();
+
 	findshlibs::TargetSharedLibrary::each(|shlib| {
+		if let Some(ref process) = process {
+			if shlib.name() == process {
+				// Skip the current process
+				return IterationControl::Continue;
+			}
+		}
+
 		let lib = match libloading::Library::new(shlib.name()) {
 			Ok(lib) => lib,
 			Err(err) => {
@@ -318,5 +337,6 @@ pub unsafe fn scan_fn<T: Copy>(symbol: &[u8]) -> Result<Option<T>, libloading::E
 			}
 		}
 	});
+
 	result
 }
